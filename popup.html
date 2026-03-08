@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-0: #07111f;
+      --bg-1: rgba(11, 18, 32, 0.92);
+      --bg-2: rgba(16, 24, 40, 0.88);
+      --card: rgba(255, 255, 255, 0.06);
+      --card-strong: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f8fbff;
+      --muted: #9fb0c8;
+      --accent: #6ea8fe;
+      --accent-2: #7c5cff;
+      --good: #3ddc97;
+      --warn: #ffcf5a;
+      --bad: #ff7a90;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(124, 92, 255, 0.22), transparent 34%),
+        radial-gradient(circle at top right, rgba(110, 168, 254, 0.2), transparent 28%),
+        linear-gradient(180deg, #07111f 0%, #0b1322 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-width: 0;
+      padding: 14px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(124, 92, 255, 0.22), rgba(110, 168, 254, 0.14));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      padding: 16px 16px 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -40px auto;
+      width: 130px;
+      height: 130px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(61, 220, 151, 0.2), transparent 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #d9e7ff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 12px 0 6px;
+      font-size: 22px;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+      max-width: 95%;
+    }
+
+    .panel {
+      width: 100%;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      min-width: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .models {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .model-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .model-row label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .model-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-2);
+      flex: 0 0 auto;
+    }
+
+    .status {
+      flex: 0 0 auto;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status.ready {
+      background: rgba(61, 220, 151, 0.16);
+      color: #9bf3ca;
+      border-color: rgba(61, 220, 151, 0.28);
+    }
+
+    .status.busy {
+      background: rgba(255, 122, 144, 0.16);
+      color: #ffc1cd;
+      border-color: rgba(255, 122, 144, 0.28);
+    }
+
+    .composer-grid {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    textarea {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      min-height: 120px;
+      padding: 14px 15px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(7, 14, 25, 0.9);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      font: inherit;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea::placeholder {
+      color: #7f93ae;
+    }
+
+    textarea:focus {
+      border-color: rgba(110, 168, 254, 0.55);
+      box-shadow: 0 0 0 4px rgba(110, 168, 254, 0.12);
+    }
+
+    .file-area,
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .file-indicator,
+    .controls label,
+    .meta-text {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .file-indicator {
+      font-weight: 700;
+      color: #cfe0ff;
+    }
+
+    .clear-files {
+      color: #ffc1cd;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .clear-files:hover {
+      color: #ffe2e8;
+    }
+
+    .controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .controls input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .warning {
+      display: none;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #ffe6a3;
+      background: rgba(255, 207, 90, 0.12);
+      border: 1px solid rgba(255, 207, 90, 0.24);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: white;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      box-shadow: 0 14px 28px rgba(90, 96, 255, 0.32);
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 34px rgba(90, 96, 255, 0.36);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 20px rgba(90, 96, 255, 0.24);
+    }
+
+    #comparisonView {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .response-box,
+    .composer-panel {
+      width: 100%;
+      min-width: 0;
+      background: var(--bg-2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      min-width: 0;
+    }
+
+    .model-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .model-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(124, 92, 255, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .response-state {
+      flex: 0 0 auto;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      white-space: nowrap;
+      max-width: 48%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .response-state.idle,
+    .response-state.skipped,
+    .response-state.offline {
+      color: #c0cadb;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .response-state.queued {
+      color: #ffe6a3;
+      background: rgba(255, 207, 90, 0.12);
+      border-color: rgba(255, 207, 90, 0.24);
+    }
+
+    .response-state.sending {
+      color: #cde0ff;
+      background: rgba(110, 168, 254, 0.14);
+      border-color: rgba(110, 168, 254, 0.28);
+    }
+
+    .response-state.responding {
+      color: #dfd5ff;
+      background: rgba(124, 92, 255, 0.15);
+      border-color: rgba(124, 92, 255, 0.28);
+    }
+
+    .response-state.done {
+      color: #9bf3ca;
+      background: rgba(61, 220, 151, 0.14);
+      border-color: rgba(61, 220, 151, 0.28);
+    }
+
+    .response-state.error {
+      color: #ffc1cd;
+      background: rgba(255, 122, 144, 0.14);
+      border-color: rgba(255, 122, 144, 0.26);
+    }
+
+    .response-text {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      max-height: 280px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+      line-height: 1.58;
+      color: #e9f1ff;
+      padding-right: 2px;
+    }
+
+    .composer-panel {
+      padding-top: 16px;
+    }
+
+    .composer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .composer-head h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .composer-head span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="hero">
+      <div class="eyebrow">Multi-model workspace</div>
+      <h1>LLM Command Center</h1>
+      <p>Send one prompt across your model tabs, compare responses instantly, and keep the next prompt ready without leaving the workspace.</p>
+    </div>
+
+    <div id="setupView" class="panel">
+      <div class="section-title">
+        <h2>Active models</h2>
+        <span>Live tab status</span>
+      </div>
+      <div id="selectors" class="models">
+        <div class="model-row"><label><input type="checkbox" id="check-gpt" checked> ChatGPT</label><span id="status-gpt" class="status">...</span></div>
+        <div class="model-row"><label><input type="checkbox" id="check-claude" checked> Claude</label><span id="status-claude" class="status">...</span></div>
+        <div class="model-row"><label><input type="checkbox" id="check-gemini" checked> Gemini</label><span id="status-gemini" class="status">...</span></div>
+        <div class="model-row"><label><input type="checkbox" id="check-ds" checked> DeepSeek</label><span id="status-ds" class="status">...</span></div>
+        <div class="model-row"><label><input type="checkbox" id="check-perp" checked> Perplexity</label><span id="status-perp" class="status">...</span></div>
+      </div>
+
+      <div class="composer-grid" style="margin-top: 14px;">
+        <textarea id="promptText" placeholder="Type your prompt here, or paste files with Ctrl+V..."></textarea>
+        <div class="file-area">
+          <span id="fileIndicator" class="file-indicator">No files</span>
+          <span id="clearFilesBtn" class="clear-files" style="display:none">Clear attachments</span>
+        </div>
+        <div id="fileWarning" class="warning">⚠️ The current file count is above the limit for at least one selected model, so some attachments may be skipped there.</div>
+        <div class="controls">
+          <label><input type="checkbox" id="newChat"> Start fresh chats</label>
+          <span class="meta-text">Prompt clears automatically after send</span>
+        </div>
+        <div class="button-row">
+          <button id="sendBtn">Execute Prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="comparisonView">
+      <div class="response-box"><div class="box-header"><div class="model-label"><span class="model-dot"></span><span>ChatGPT</span></div><span id="respstatus-gpt" class="response-state idle">Idle</span></div><div id="out-gpt" class="response-text">Waiting...</div></div>
+      <div class="response-box"><div class="box-header"><div class="model-label"><span class="model-dot"></span><span>Claude</span></div><span id="respstatus-claude" class="response-state idle">Idle</span></div><div id="out-claude" class="response-text">Waiting...</div></div>
+      <div class="response-box"><div class="box-header"><div class="model-label"><span class="model-dot"></span><span>Gemini</span></div><span id="respstatus-gemini" class="response-state idle">Idle</span></div><div id="out-gemini" class="response-text">Waiting...</div></div>
+      <div class="response-box"><div class="box-header"><div class="model-label"><span class="model-dot"></span><span>DeepSeek</span></div><span id="respstatus-ds" class="response-state idle">Idle</span></div><div id="out-ds" class="response-text">Waiting...</div></div>
+      <div class="response-box"><div class="box-header"><div class="model-label"><span class="model-dot"></span><span>Perplexity</span></div><span id="respstatus-perp" class="response-state idle">Idle</span></div><div id="out-perp" class="response-text">Waiting...</div></div>
+
+      <div class="composer-panel">
+        <div class="composer-head">
+          <h3>Next prompt</h3>
+          <span>Send again without leaving the results view</span>
+        </div>
+        <div class="composer-grid">
+          <textarea id="followupPromptText" placeholder="Type the next prompt here, or paste files with Ctrl+V..."></textarea>
+          <div class="file-area">
+            <span id="followupFileIndicator" class="file-indicator">No files</span>
+            <span id="followupClearFilesBtn" class="clear-files" style="display:none">Clear attachments</span>
+          </div>
+          <div id="followupFileWarning" class="warning">⚠️ The current file count is above the limit for at least one selected model, so some attachments may be skipped there.</div>
+          <div class="controls">
+            <label><input type="checkbox" id="followupNewChat"> Start fresh chats</label>
+            <span class="meta-text">Prompt clears automatically after send</span>
+          </div>
+          <div class="button-row">
+            <button id="followupSendBtn">Execute Prompt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

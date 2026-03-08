@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Multi-Bot Command Center Ultra",
+  "version": "2.0",
+  "permissions": ["sidePanel", "tabs", "scripting", "clipboardRead"],
+  "host_permissions": [
+    "*://chatgpt.com/*",
+    "*://claude.ai/*",
+    "*://gemini.google.com/*",
+    "*://perplexity.ai/*",
+    "*://*.perplexity.ai/*",
+    "*://deepseek.com/*",
+    "*://*.deepseek.com/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "popup.html" },
+  "action": {
+    "default_title": "Open LLM Panel",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://claude.ai/*",
+        "*://gemini.google.com/*",
+        "*://perplexity.ai/*",
+        "*://*.perplexity.ai/*",
+        "*://deepseek.com/*",
+        "*://*.deepseek.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
