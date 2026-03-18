@@ -212,20 +212,18 @@
   function getComposerRoot(composer) {
     if (!composer) return document.body;
 
-    const direct =
+    let root =
       composer.closest('form') ||
+      composer.closest('footer') ||
       composer.closest('[role="main"]') ||
       composer.closest('main') ||
-      composer.parentElement;
+      composer.parentElement ||
+      document.body;
 
-    let root = direct || document.body;
-
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 3; i += 1) {
       if (!root?.parentElement) break;
       const parent = root.parentElement;
-      const hasButtons = parent.querySelector('button');
-      const hasFileInput = parent.querySelector('input[type="file"]');
-      if (hasButtons || hasFileInput) {
+      if (parent.querySelector('button') || parent.querySelector('input[type="file"]')) {
         root = parent;
       } else {
         break;
@@ -288,6 +286,18 @@
     element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
   }
 
+  function getButtonLabel(button) {
+    return normalizeText(
+      [
+        button?.getAttribute?.('aria-label') || '',
+        button?.getAttribute?.('title') || '',
+        button?.getAttribute?.('mattooltip') || '',
+        button?.innerText || '',
+        button?.textContent || ''
+      ].join(' ')
+    ).toLowerCase();
+  }
+
   function getSendButtonSelectors() {
     switch (botName) {
       case 'gpt':
@@ -330,26 +340,15 @@
     }
   }
 
-  function getButtonLabel(button) {
-    return normalizeText(
-      [
-        button?.getAttribute?.('aria-label') || '',
-        button?.getAttribute?.('title') || '',
-        button?.getAttribute?.('mattooltip') || '',
-        button?.innerText || '',
-        button?.textContent || ''
-      ].join(' ')
-    ).toLowerCase();
-  }
-
   function looksLikeSendButton(button) {
     if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true') return false;
+
     const label = getButtonLabel(button);
     const html = (button.innerHTML || '').toLowerCase();
 
-    if (/attach|upload|file|image|photo|plus|add|insert/.test(label)) return false;
+    if (/attach|upload|file|image|photo|plus|add|insert|temporary|model|canvas|deep research/.test(label)) return false;
     if (/send|submit|ask|go/.test(label)) return true;
-    if (html.includes('send') || html.includes('arrow_upward') || html.includes('arrow-up') || html.includes('paper-plane')) return true;
+    if (html.includes('send') || html.includes('arrow_upward') || html.includes('paper-plane')) return true;
 
     return false;
   }
@@ -373,29 +372,24 @@
       if (button) return button;
     }
 
-    if (composer) {
-      const root = getComposerRoot(composer);
-      const buttons = Array.from(root.querySelectorAll('button')).filter((button) =>
-        isVisible(button) &&
-        !button.disabled &&
-        button.getAttribute('aria-disabled') !== 'true'
-      );
+    if (!composer) return null;
 
-      const explicit = buttons.find((button) => looksLikeSendButton(button));
-      if (explicit) return explicit;
+    const root = getComposerRoot(composer);
+    const buttons = Array.from(root.querySelectorAll('button')).filter((button) =>
+      isVisible(button) &&
+      !button.disabled &&
+      button.getAttribute('aria-disabled') !== 'true'
+    );
 
-      const fallback = buttons.at(-1);
-      if (fallback) return fallback;
-    }
-
-    return null;
+    const explicit = buttons.find((button) => looksLikeSendButton(button));
+    return explicit || null;
   }
 
   function getSendWaitMs(hasFiles) {
-    if (botName === 'ds') return hasFiles ? 12000 : 7000;
-    if (botName === 'gemini') return hasFiles ? 7000 : 4000;
-    if (botName === 'claude') return hasFiles ? 6000 : 3500;
-    if (botName === 'perp') return hasFiles ? 6000 : 3500;
+    if (botName === 'ds') return hasFiles ? 18000 : 9000;
+    if (botName === 'gemini') return hasFiles ? 9000 : 4500;
+    if (botName === 'claude') return hasFiles ? 7000 : 3500;
+    if (botName === 'perp') return hasFiles ? 7000 : 3500;
     return hasFiles ? 5000 : 2500;
   }
 
@@ -404,76 +398,9 @@
     while (Date.now() - started < timeoutMs) {
       const button = findEnabledSendButton(composer);
       if (button) return button;
-      await wait(120);
+      await wait(150);
     }
     return null;
-  }
-
-  function getAttachmentButtonSelectors() {
-    switch (botName) {
-      case 'gpt':
-        return [
-          'button[aria-label*="Attach"]',
-          'button[aria-label*="Upload"]',
-          '[data-testid*="attach"] button',
-          '[data-testid*="upload"] button'
-        ];
-      case 'claude':
-        return [
-          'button[aria-label*="Attach"]',
-          'button[aria-label*="Upload"]',
-          'button[aria-label*="Plus"]',
-          'button[aria-label*="plus"]',
-          'button:has(svg)',
-          'button:has(i)'
-        ];
-      case 'gemini':
-        return [
-          'button[aria-label*="Add"]',
-          'button[aria-label*="add"]',
-          'button[aria-label*="Upload"]',
-          'button[aria-label*="upload"]',
-          'button[aria-label*="Insert"]',
-          'button[aria-label*="insert"]',
-          'button[aria-label*="files"]',
-          'button[aria-label*="Files"]',
-          'button[mattooltip*="Add"]',
-          'button[mattooltip*="Upload"]',
-          'button[mattooltip*="files"]',
-          'button:has(svg)',
-          'button:has(mat-icon)'
-        ];
-      case 'perp':
-        return [
-          'button[aria-label*="Attach"]',
-          'button[aria-label*="Upload"]',
-          'button[aria-label*="Plus"]',
-          'button[aria-label*="plus"]',
-          'button:has(svg)'
-        ];
-      default:
-        return [
-          'button[aria-label*="Attach"]',
-          'button[aria-label*="Upload"]',
-          'button[aria-label*="Plus"]',
-          'button[aria-label*="plus"]',
-          'button:has(svg)'
-        ];
-    }
-  }
-
-  function looksLikeAttachButton(button) {
-    if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true') return false;
-    const label = getButtonLabel(button);
-    const html = (button.innerHTML || '').toLowerCase();
-
-    if (/send|submit|stop|cancel|voice|microphone|mic/.test(label)) return false;
-    if (/attach|upload|file|image|photo|picture|add|plus|insert/.test(label)) return true;
-    if (html.includes('attach') || html.includes('upload') || html.includes('image') || html.includes('photo')) return true;
-    if (html.includes('add') || html.includes('plus')) return true;
-
-    const rect = button.getBoundingClientRect();
-    return rect.width <= 56 && rect.height <= 56 && !label;
   }
 
   function getAttachmentChipSelectors() {
@@ -483,16 +410,14 @@
           '[data-testid*="attachment"]',
           '[data-testid*="file"]',
           '[data-testid*="upload"]',
-          'button[aria-label*="Remove"]',
-          'img[alt*="upload"]'
+          'button[aria-label*="Remove"]'
         ];
       case 'claude':
         return [
           '[data-testid*="attachment"]',
           '[data-testid*="file"]',
           'button[aria-label*="Remove attachment"]',
-          '.attachment',
-          'img'
+          '.attachment'
         ];
       case 'gemini':
         return [
@@ -500,21 +425,19 @@
           '.uploaded-file',
           '[data-test-id*="attachment"]',
           'button[aria-label*="Remove"]',
-          'img'
+          'button[aria-label*="Delete attachment"]'
         ];
       case 'perp':
         return [
           '[data-testid*="attachment"]',
           '[data-testid*="file"]',
-          '.attachment',
-          'img'
+          '.attachment'
         ];
       default:
         return [
           '[data-testid*="attachment"]',
           '[data-testid*="file"]',
-          '.attachment',
-          'img'
+          '.attachment'
         ];
     }
   }
@@ -538,71 +461,16 @@
 
     switch (botName) {
       case 'ds':
-        return 6000 + (n - 1) * 2500;
+        return 7000 + (n - 1) * 3000;
       case 'claude':
         return 3500 + (n - 1) * 1800;
       case 'gemini':
-        return 3500 + (n - 1) * 1600;
+        return 3500 + (n - 1) * 1800;
       case 'perp':
         return 3500 + (n - 1) * 1800;
       default:
         return 2200 + (n - 1) * 1200;
     }
-  }
-
-  function getAllFileInputs(root = document) {
-    return Array.from(root.querySelectorAll('input[type="file"]')).filter((input) => !input.disabled);
-  }
-
-  function getLastFileInput(root = document) {
-    return getAllFileInputs(root).at(-1) || null;
-  }
-
-  async function tryClickButtonsForFileInput(buttons, root) {
-    const clicked = new Set();
-
-    for (const button of buttons) {
-      if (!button || clicked.has(button)) continue;
-      clicked.add(button);
-
-      try {
-        button.click();
-      } catch (error) {
-        // Ignore click failures.
-      }
-
-      await wait(350);
-
-      const fileInput = getLastFileInput(root) || getLastFileInput(document);
-      if (fileInput) return fileInput;
-    }
-
-    return null;
-  }
-
-  async function revealFileInput(composer) {
-    const root = getComposerRoot(composer);
-
-    let fileInput = getLastFileInput(root) || getLastFileInput(document);
-    if (fileInput) return fileInput;
-
-    const selectorButtons = visibleElements(getAttachmentButtonSelectors(), root);
-    fileInput = await tryClickButtonsForFileInput(selectorButtons, root);
-    if (fileInput) return fileInput;
-
-    const globalSelectorButtons = visibleElements(getAttachmentButtonSelectors(), document);
-    fileInput = await tryClickButtonsForFileInput(globalSelectorButtons, document);
-    if (fileInput) return fileInput;
-
-    const rootButtons = Array.from(root.querySelectorAll('button')).filter((button) => isVisible(button) && looksLikeAttachButton(button));
-    fileInput = await tryClickButtonsForFileInput(rootButtons, root);
-    if (fileInput) return fileInput;
-
-    const allVisibleButtons = Array.from(document.querySelectorAll('button')).filter((button) => isVisible(button) && looksLikeAttachButton(button));
-    fileInput = await tryClickButtonsForFileInput(allVisibleButtons, document);
-    if (fileInput) return fileInput;
-
-    return waitForElement(['input[type="file"]'], 2500);
   }
 
   async function buildDataTransferFiles(files) {
@@ -633,8 +501,10 @@
   async function waitForUploadsToSettle(fileCount, root = document) {
     const minDelay = getUploadSettleDelayMs(fileCount);
     const started = Date.now();
-    const deadline = started + minDelay + 12000;
-    let sawAttachmentChip = countVisibleElements(getAttachmentChipSelectors(), root) > 0 || countVisibleElements(getAttachmentChipSelectors(), document) > 0;
+    const deadline = started + minDelay + 14000;
+    let sawAttachmentChip =
+      countVisibleElements(getAttachmentChipSelectors(), root) > 0 ||
+      countVisibleElements(getAttachmentChipSelectors(), document) > 0;
 
     while (Date.now() < deadline) {
       const chipCount =
@@ -643,28 +513,205 @@
 
       if (chipCount > 0) sawAttachmentChip = true;
 
-      const busy = hasVisibleElement(getAttachmentBusySelectors(), root) || hasVisibleElement(getAttachmentBusySelectors(), document);
+      const busy =
+        hasVisibleElement(getAttachmentBusySelectors(), root) ||
+        hasVisibleElement(getAttachmentBusySelectors(), document);
+
       const elapsed = Date.now() - started;
 
       if (elapsed >= minDelay && (!busy || sawAttachmentChip)) {
-        await wait(700);
-        const stillBusy = hasVisibleElement(getAttachmentBusySelectors(), root) || hasVisibleElement(getAttachmentBusySelectors(), document);
+        await wait(800);
+        const stillBusy =
+          hasVisibleElement(getAttachmentBusySelectors(), root) ||
+          hasVisibleElement(getAttachmentBusySelectors(), document);
+
         if (!stillBusy) return true;
       }
 
-      await wait(300);
+      await wait(350);
     }
 
     return sawAttachmentChip;
   }
 
-  async function attachFiles(files, composer) {
+  function allFilesAreImages(files) {
+    return Array.isArray(files) && files.length > 0 && files.every((file) => (file.type || '').startsWith('image/'));
+  }
+
+  async function pasteFilesIntoComposer(files, composer) {
+    const root = getComposerRoot(composer);
+    const dataTransfer = await buildDataTransferFiles(files);
+
+    composer.focus();
+
+    let pasteWorked = false;
+
+    try {
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true
+      });
+
+      Object.defineProperty(pasteEvent, 'clipboardData', {
+        configurable: true,
+        value: dataTransfer
+      });
+
+      pasteWorked = composer.dispatchEvent(pasteEvent);
+    } catch (error) {
+      pasteWorked = false;
+    }
+
+    await wait(600);
+
+    const settledAfterPaste = await waitForUploadsToSettle(files.length, root);
+    if (settledAfterPaste) return true;
+
+    const dropTargets = [composer, root, composer.parentElement].filter(Boolean);
+    for (const target of dropTargets) {
+      const dropped = dispatchFileDrop(target, dataTransfer);
+      if (!dropped) continue;
+
+      const settledAfterDrop = await waitForUploadsToSettle(files.length, root);
+      if (settledAfterDrop) return true;
+    }
+
+    return pasteWorked;
+  }
+
+  function getAllFileInputs(root = document) {
+    return Array.from(root.querySelectorAll('input[type="file"]')).filter((input) => !input.disabled);
+  }
+
+  function getLastFileInput(root = document) {
+    return getAllFileInputs(root).at(-1) || null;
+  }
+
+  function findGeminiUploadMenuOption() {
+    const nodes = Array.from(document.querySelectorAll('button, [role="menuitem"], li, div[role="button"]')).filter(isVisible);
+    return nodes.find((node) => {
+      const label = getButtonLabel(node);
+      return /upload|files|from device|local files/.test(label);
+    }) || null;
+  }
+
+  function findGeminiExactAddFilesButton(root) {
+    const candidates = visibleElements([
+      'button[aria-label*="Add files"]',
+      'button[aria-label*="add files"]',
+      'button[aria-label*="Upload"]',
+      'button[aria-label*="upload"]',
+      'button[aria-label*="Files"]',
+      'button[aria-label*="files"]',
+      'button[mattooltip*="Add files"]',
+      'button[mattooltip*="Upload"]',
+      'button[mattooltip*="Files"]'
+    ], root);
+
+    return candidates[0] || null;
+  }
+
+  async function revealGeminiFileInputMinimal(composer) {
+    const root = getComposerRoot(composer);
+
+    let input = getLastFileInput(root) || getLastFileInput(document);
+    if (input) return input;
+
+    const addFilesButton = findGeminiExactAddFilesButton(root);
+    if (!addFilesButton) return null;
+
+    try {
+      addFilesButton.click();
+    } catch (error) {
+      return null;
+    }
+
+    await wait(350);
+
+    const uploadOption = findGeminiUploadMenuOption();
+    if (uploadOption) {
+      try {
+        uploadOption.click();
+      } catch (error) {
+        // Ignore click failures.
+      }
+      await wait(350);
+    }
+
+    input = getLastFileInput(root) || getLastFileInput(document);
+    if (input) return input;
+
+    return waitForElement(['input[type="file"]'], 2500);
+  }
+
+  async function attachFilesGemini(files, composer) {
+    const root = getComposerRoot(composer);
+
+    if (allFilesAreImages(files)) {
+      const pasted = await pasteFilesIntoComposer(files, composer);
+      if (pasted) {
+        const settled = await waitForUploadsToSettle(files.length, root);
+        if (settled) return true;
+      }
+    }
+
+    const input = await revealGeminiFileInputMinimal(composer);
+    if (!input) return false;
+
+    const dataTransfer = await buildDataTransferFiles(files);
+
+    try {
+      input.files = dataTransfer.files;
+    } catch (error) {
+      try {
+        Object.defineProperty(input, 'files', {
+          configurable: true,
+          value: dataTransfer.files
+        });
+      } catch (defineError) {
+        return false;
+      }
+    }
+
+    try {
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (error) {
+      // Ignore dispatch failures.
+    }
+
+    return waitForUploadsToSettle(files.length, root);
+  }
+
+  async function attachFilesGeneric(files, composer) {
     if (!files || files.length === 0) return true;
 
     const root = getComposerRoot(composer);
     const dataTransfer = await buildDataTransferFiles(files);
 
-    const input = await revealFileInput(composer);
+    let input = getLastFileInput(root) || getLastFileInput(document);
+
+    if (!input) {
+      const exactButtons = visibleElements([
+        'button[aria-label*="Attach"]',
+        'button[aria-label*="Upload"]',
+        'button[aria-label*="Plus"]',
+        'button[aria-label*="plus"]'
+      ], root);
+
+      for (const button of exactButtons) {
+        try {
+          button.click();
+        } catch (error) {
+          // Ignore click failures.
+        }
+
+        await wait(300);
+        input = getLastFileInput(root) || getLastFileInput(document);
+        if (input) break;
+      }
+    }
+
     if (input) {
       try {
         input.files = dataTransfer.files;
@@ -683,7 +730,7 @@
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
       } catch (error) {
-        // Ignore event dispatch failures.
+        // Ignore dispatch failures.
       }
 
       const settled = await waitForUploadsToSettle(files.length, root);
@@ -700,6 +747,12 @@
     }
 
     return false;
+  }
+
+  async function attachFiles(files, composer) {
+    if (!files || files.length === 0) return true;
+    if (botName === 'gemini') return attachFilesGemini(files, composer);
+    return attachFilesGeneric(files, composer);
   }
 
   function isComposerInteractive() {
@@ -803,7 +856,7 @@
     const initialDelay =
       botName === 'claude' ? 700 :
       botName === 'gemini' ? 1000 :
-      botName === 'ds' ? 1800 :
+      botName === 'ds' ? 2200 :
       300;
 
     await wait(initialDelay);
@@ -867,7 +920,7 @@
         // Ignore keyboard dispatch failures.
       }
 
-      await wait(500);
+      await wait(600);
 
       const retryButton = findEnabledSendButton(composer);
       if (!retryButton) return true;
@@ -932,24 +985,21 @@
             const attached = await attachFiles(request.files, composer);
             if (!attached) {
               publishResponseState('error');
-              safeSendMessage({ action: 'updateResponse', bot: botName, text: 'Attachment upload could not be started.' });
+              safeSendMessage({ action: 'updateResponse', bot: botName, text: botName === 'gemini'
+                ? 'Gemini attachment failed. Image paste/input path did not attach the file.'
+                : 'Attachment upload could not be started.' });
               return;
             }
 
-            if (botName === 'ds') {
-              await wait(2500);
-            }
-
-            if (botName === 'gemini') {
-              await wait(1200);
-            }
+            if (botName === 'ds') await wait(3500);
+            if (botName === 'gemini') await wait(1200);
           }
 
           publishResponseState('sending');
           setComposerText(composer, request.text || '');
 
           if (botName === 'ds' && request.files?.length) {
-            await wait(1200);
+            await wait(1800);
           }
 
           const sent = await clickSendOrPressEnter(composer, Boolean(request.files?.length));
